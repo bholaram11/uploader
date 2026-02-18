@@ -67,11 +67,6 @@ from vars import *
 from pyromod import listen
 from db import db
 
-# 🌐 Proxy Configuration
-if PROXY:
-    os.environ['HTTP_PROXY'] = PROXY
-    os.environ['HTTPS_PROXY'] = PROXY
-
 auto_flags = {}
 auto_clicked = False
 STOP_PROCESS = False
@@ -170,6 +165,30 @@ async def get_log_channel_cmd(client: Client, message: Message):
                 "Use /setlog to set a log channel"
             )
 
+    except Exception as e:
+        await message.reply_text(f"❌ Error: {str(e)}")
+
+@bot.on_message(filters.command("proxy_add") & filters.private)
+async def proxy_add_handler(client: Client, message: Message):
+    """Add proxy dynamically for downloads"""
+    try:
+        if not db.is_admin(message.from_user.id):
+            await message.reply_text("⚠️ You are not authorized to use this command.")
+            return
+
+        args = message.text.split()
+        if len(args) != 2:
+            await message.reply_text("❌ Invalid format!\nUse: /proxy_add http://ip:port")
+            return
+
+        proxy_url = args[1]
+        
+        # Set environment variables for subprocesses and libraries
+        os.environ['HTTP_PROXY'] = proxy_url
+        os.environ['HTTPS_PROXY'] = proxy_url
+        
+        await message.reply_text(f"✅ Proxy set successfully for downloads!\n`{proxy_url}`")
+        
     except Exception as e:
         await message.reply_text(f"❌ Error: {str(e)}")
 
@@ -1512,14 +1531,19 @@ def notify_owner():
         "chat_id": OWNER_ID,
         "text": "Bᴏᴛ Iꜱ Lɪᴠᴇ Nᴏᴡ 🤖"
     }
-    requests.post(url, data=data)
+    try:
+        requests.post(url, data=data, timeout=15)
+    except Exception as e:
+        print(f"Error notifying owner: {e}")
 
 
 def reset_and_set_commands():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands"
-    # Reset
-    requests.post(url, json={"commands": []})
-    # Set new
+    try:
+        # Reset
+        requests.post(url, json={"commands": []}, timeout=15)
+        
+        # Set new
     commands = [
     {"command": "start", "description": "✅ ᴄʜᴇᴄᴋ ɪꜰ ᴛʜᴇ ʙᴏᴛ ɪꜱ ᴀʟɪᴠᴇ"},
     {"command": "drm", "description": "📄 ᴜᴘʟᴏᴀᴅ ᴀ .ᴛxᴛ ꜰɪʟᴇ"},
@@ -1533,14 +1557,29 @@ def reset_and_set_commands():
     {"command": "remove", "description": "⏸️ Remove Auth "},
     {"command": "users", "description": "👨‍👨‍👧‍👦 All Users"},
 ]
-
-    requests.post(url, json={"commands": commands})
+        commands = [
+            {"command": "start", "description": "✅ ᴄʜᴇᴄᴋ ɪꜰ ᴛʜᴇ ʙᴏᴛ ɪꜱ ᴀʟɪᴠᴇ"},
+            {"command": "drm", "description": "📄 ᴜᴘʟᴏᴀᴅ ᴀ .ᴛxᴛ ꜰɪʟᴇ"},
+            {"command": "stop", "description": "⏹ ᴛᴇʀᴍɪɴᴀᴛᴇ ᴛʜᴇ ᴏɴɢᴏɪɴɢ ᴘʀᴏᴄᴇꜱꜱ"},
+            {"command": "reset", "description": "♻️ ʀᴇꜱᴇᴛ ᴛʜᴇ ʙᴏᴛ"},
+            {"command": "cookies", "description": "🍪 ᴜᴘʟᴏᴀᴅ ʏᴏᴜᴛᴜʙᴇ ᴄᴏᴏᴋɪᴇꜱ"},
+            {"command": "t2t", "description": "📝 ᴛᴇxᴛ → .ᴛxᴛ ɢᴇɴᴇʀᴀᴛᴏʀ"},
+            {"command": "id", "description": "🆔 ɢᴇᴛ ʏᴏᴜʀ ᴜꜱᴇʀ ɪᴅ"},
+            {"command": "add", "description": "▶️ Add Auth "},
+            {"command": "info", "description": "ℹ️ ᴄʜᴇᴄᴋ ʏᴏᴜʀ ɪɴꜰᴏʀᴍᴀᴛɪᴏɴ"},
+            {"command": "remove", "description": "⏸️ Remove Auth "},
+            {"command": "users", "description": "👨‍👨‍👧‍👦 All Users"},
+        ]
+        requests.post(url, json={"commands": commands}, timeout=15)
+    except Exception as e:
+        print(f"Error setting commands: {e}")
     
 
 
 
 if __name__ == "__main__":
+    print("Starting startup tasks...")
     reset_and_set_commands()
     notify_owner() 
-
-bot.run()
+    print("Bot is starting now...")
+    bot.run()
