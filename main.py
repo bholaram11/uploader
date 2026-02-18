@@ -182,13 +182,41 @@ async def proxy_add_handler(client: Client, message: Message):
             return
 
         proxy_url = args[1]
+        msg = await message.reply_text("🔄 **Checking proxy health...**")
         
-        # Set environment variables for subprocesses and libraries
-        os.environ['HTTP_PROXY'] = proxy_url
-        os.environ['HTTPS_PROXY'] = proxy_url
-        
-        await message.reply_text(f"✅ Proxy set successfully for downloads!\n`{proxy_url}`")
-        
+        try:
+            start_time = time.time()
+            async with aiohttp.ClientSession() as session:
+                async with session.get("http://ip-api.com/json", proxy=proxy_url, timeout=10) as response:
+                    end_time = time.time()
+                    
+                    if response.status == 200:
+                        data = await response.json()
+                        
+                        country = data.get('country', 'Unknown')
+                        region = data.get('regionName', 'Unknown')
+                        isp = data.get('isp', 'Unknown')
+                        latency = (end_time - start_time) * 1000
+                        
+                        # Set environment variables only if working
+                        os.environ['HTTP_PROXY'] = proxy_url
+                        os.environ['HTTPS_PROXY'] = proxy_url
+                        
+                        await msg.edit_text(
+                            f"✅ **Proxy Verified & Added!**\n\n"
+                            f"🌍 **Region:** {country}, {region}\n"
+                            f"🏢 **ISP:** {isp}\n"
+                            f"⚡ **Latency:** {latency:.2f} ms\n"
+                            f"🔗 **Proxy:** `{proxy_url}`"
+                        )
+                    else:
+                        await msg.edit_text(f"❌ **Proxy Failed:** HTTP {response.status}")
+                        
+        except asyncio.TimeoutError:
+            await msg.edit_text("❌ **Proxy Timed Out:** No response within 10 seconds.")
+        except Exception as e:
+            await msg.edit_text(f"❌ **Proxy Error:** {str(e)}")
+            
     except Exception as e:
         await message.reply_text(f"❌ Error: {str(e)}")
 
