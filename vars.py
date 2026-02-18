@@ -8,8 +8,6 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 CREDIT = os.environ.get("CREDIT", "⌯ FʀᴏɴᴛMᴀɴ | ×͜× |")
 
-# Proxy Configuration (Format: http://ip:port or http://user:pass@ip:port)
-PROXY = os.environ.get("PROXY", "")
 # MongoDB Configuration
 DATABASE_NAME = os.environ.get("DATABASE_NAME", "DevThanos")
 DATABASE_URL = os.environ.get("DATABASE_URL", "mongodb+srv://ajmerasaini01:U1sGiZRI6Ha0xuCy@cluster0.tnok3d0.mongodb.net/")  # Add your own atlas db
