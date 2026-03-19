@@ -7,7 +7,7 @@ asyncio
 
 # HTTP & scraping
 requests==2.31.0
-cloudscraper
+cloudscraper==1.2.71
 aiohttp
 aiofiles
 urllib3==2.0.3
