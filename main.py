@@ -1040,22 +1040,21 @@ async def txt_handler(bot: Client, m: Message):
                             try:
                                 await asyncio.sleep(retry_delay)
                                 url = url.replace(" ", "%20")
-                                scraper = cloudscraper.create_scraper()
-                                response = scraper.get(url)
+                                scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
+                                response = scraper.get(url, stream=True)
+                                response.raise_for_status()
 
-                                if response.status_code == 200:
-                                    with open(f'{name}.pdf', 'wb') as file:
-                                        file.write(response.content)
-                                    await asyncio.sleep(retry_delay)  # Optional, to prevent spamming
-                                    copy = await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1)
-                                    copy = await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1, message_thread_id=topic_id)
-                                    count += 1
-                                    os.remove(f'{name}.pdf')
-                                    success = True
-                                    break  # Exit the retry loop if successful
-                                else:
-                                    failure_msg = await m.reply_text(f"Attempt {attempt + 1}/{max_retries} failed: {response.status_code} {response.reason}")
-                                    failure_msgs.append(failure_msg)
+                                with open(f'{name}.pdf', 'wb') as file:
+                                    for chunk in response.iter_content(chunk_size=1024*1024):
+                                        if chunk:
+                                            file.write(chunk)
+                                await asyncio.sleep(retry_delay)  # Optional, to prevent spamming
+                                copy = await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1)
+                                copy = await bot.send_document(chat_id=channel_id, document=f'{name}.pdf', caption=cc1, message_thread_id=topic_id)
+                                count += 1
+                                os.remove(f'{name}.pdf')
+                                success = True
+                                break  # Exit the retry loop if successful
                                     
                             except Exception as e:
                                 failure_msg = await m.reply_text(f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
@@ -1443,20 +1442,19 @@ async def text_handler(bot: Client, m: Message):
                             try:
                                 await asyncio.sleep(retry_delay)
                                 url = url.replace(" ", "%20")
-                                scraper = cloudscraper.create_scraper()
-                                response = scraper.get(url)
+                                scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
+                                response = scraper.get(url, stream=True)
+                                response.raise_for_status()
 
-                                if response.status_code == 200:
-                                    with open(f'{name}.pdf', 'wb') as file:
-                                        file.write(response.content)
-                                    await asyncio.sleep(retry_delay)  # Optional, to prevent spamming
-                                    copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
-                                    os.remove(f'{name}.pdf')
-                                    success = True
-                                    break  # Exit the retry loop if successful
-                                else:
-                                    failure_msg = await m.reply_text(f"Attempt {attempt + 1}/{max_retries} failed: {response.status_code} {response.reason}")
-                                    failure_msgs.append(failure_msg)
+                                with open(f'{name}.pdf', 'wb') as file:
+                                    for chunk in response.iter_content(chunk_size=1024*1024):
+                                        if chunk:
+                                            file.write(chunk)
+                                await asyncio.sleep(retry_delay)  # Optional, to prevent spamming
+                                copy = await bot.send_document(chat_id=m.chat.id, document=f'{name}.pdf', caption=cc1)
+                                os.remove(f'{name}.pdf')
+                                success = True
+                                break  # Exit the retry loop if successful
                                     
                             except Exception as e:
                                 failure_msg = await m.reply_text(f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}")
